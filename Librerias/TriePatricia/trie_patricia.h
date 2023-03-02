@@ -2,38 +2,187 @@
 #define TRIE_PATRICIA_H
 
 #include <iostream>
-#include "trie.h"
+#include <list>
+#include <string>
+#include <sstream>
 
-// template <typename T>
-class TriePatricia : public Trie
+const unsigned ALPHA_SIZE = 26;
+
+template <typename TV>
+class TriePatricia
 {
   private:
     struct TrieNode;
     TrieNode* root;
   public:
     TriePatricia();
-    ~TriePatricia() {};
-    void insert(std::string key);
+    ~TriePatricia() {std::cout << "\nTrie Patricia Eliminado";};
+    void insert(std::string key, TV value);
     bool search(std::string key);
+    TV get_value(std::string key);
+    std::list<TV> return_values(std::string preffix);
     std::list<std::string> start_with(std::string preffix);
     void remove(std::string key);
-    std::string toString(std::string sep);
+    std::string toString();
   private:
-    TrieNode* insert(std::string key, TrieNode* node);
-    TrieNode* search(std::string &key, TrieNode* &node);
-    TrieNode* start_with(std::string &preffix, TrieNode* &node, std::string& pref);
+    TrieNode* insert(std::string key, TV value, TrieNode* node)
+    {
+      if(node == nullptr)
+      {
+        node = new TrieNode(key,value);
+        node->endWord = true;
+        return node;
+      }
+      std::string pref = "";
+      while(pref.size() < key.size() && pref.size() < node->preffix.size())
+      {
+        if (key[pref.size()] == node->preffix[pref.size()])
+          pref += key[pref.size()];
+        else
+          break;
+      }
+      
+      if (pref.size() < key.size() && pref.size() < node->preffix.size())
+      {
+        std::string suff_node = node->preffix.substr(pref.size());
+        int pos_node = suff_node[0] - 'a';
+        std::string suff_key  = key.substr(pref.size());
+        int pos_key  = suff_key[0] - 'a';
+        TrieNode* father = new TrieNode(pref);
+        father->children[pos_node] = node;
+        father->children[pos_node]->preffix = suff_node;
+        father->children[pos_key] = new TrieNode(suff_key, value);
+        father->children[pos_key]->endWord = true;
+        return father;
+      }
+      else if (pref.size() < key.size() && pref.size() == node->preffix.size())
+      {
+        std::string suff_key  = key.substr(pref.size());
+        int pos_key = suff_key[0] - 'a';
+        node->children[pos_key] = insert(suff_key, value, node->children[pos_key]);
+      }
+      else if(pref.size() == key.size() && pref.size() < node->preffix.size())
+      {
+        std::string suff_node = node->preffix.substr(pref.size());
+        int pos_node = suff_node[0] - 'a';
+        TrieNode* father = new TrieNode(pref,value);
+        father->endWord = true;
+        father->children[pos_node] = node;
+        father->children[pos_node]->preffix = suff_node;
+        return father;
+      }
+      else
+      {
+        delete node->value;
+        node->value = new TV(value);
+        node->endWord = true;
+      }
+      return node;
+    };
+    
+    TrieNode* search(std::string &key, TrieNode* &node)
+    {
+      if (node == nullptr)
+        return nullptr;
+    
+      if (key.size() < node->preffix.size())
+        return nullptr;
+    
+      if (key.size() == node->preffix.size())
+      {
+        if(key == node->preffix)
+          if(node->endWord)
+            return node;
+        return nullptr;
+      }
+    
+      std::string suff_key = key.substr(node->preffix.size());
+      int pos_key = suff_key[0] - 'a';
+      return search(suff_key, node->children[pos_key]);
+    };
+    
+    TrieNode* start_with(std::string &preffix, TrieNode* &node, std::string& pref)
+    {
+      if (node == nullptr)
+        return nullptr;
+    
+      if (preffix.size() <= node->preffix.size())
+      {
+        for(int i=0; i < preffix.size(); i++)
+        if(node->preffix[i] != preffix[i])
+          return nullptr;
+        return node;
+      }
+    
+      pref += node->preffix;
+      std::string suff_preffix = preffix.substr(node->preffix.size());
+      int pos_preffix = suff_preffix[0] - 'a';
+      return start_with(suff_preffix, node->children[pos_preffix], pref);
+    };
+
+    TrieNode* remove(std::string key, TrieNode* node)
+    {
+      if(node == nullptr)
+        return nullptr;
+      
+      if (key.size() <= node->preffix.size())
+      {
+        if (key == node->preffix)
+        {
+          if(node->endWord && node->value != nullptr)
+          {
+            delete node->value;
+            node->value = nullptr;
+          }
+          node->endWord = false;
+          if (node->is_empty())
+          {
+            delete node;
+            node = nullptr;
+          }
+        }
+        return node;
+      }
+      
+      std::string suff_key = key.substr(node->preffix.size());
+      if(node->preffix + suff_key == key)
+      {
+        int pos = suff_key[0] - 'a';
+        node->children[pos] = remove(suff_key,node->children[pos]);
+        if(node->endWord == false)
+        {
+          if(node->is_empty())
+          {
+            delete node;
+            node = nullptr;
+          }
+        }
+      }
+      return node;
+    }
+    
+    void add_values(std::list<TV>* the_list, TrieNode* &node);
     void add_results(std::list<std::string>* the_list, TrieNode* &node, std::string pref);
-    TrieNode* remove(std::string key, TrieNode* node);
-    std::string toString(std::string sep, TrieNode* temp, std::string pref);
+    std::string toString(TrieNode* temp, std::string pref);
 };
 
-struct TriePatricia::TrieNode
+template <typename TV>
+struct TriePatricia<TV>::TrieNode
 {          
   TrieNode **children;           
   std::string preffix;
   bool endWord;
+  TV* value;
 
-  TrieNode(std::string _preffix): preffix(_preffix), endWord(false)
+  TrieNode(std::string _preffix, TV _value): preffix(_preffix), endWord(false)
+  {
+    value = new TV(_value);
+    children = new TrieNode*[ALPHA_SIZE];
+    for(int i=0; i < ALPHA_SIZE; i++)
+      children[i] = nullptr;
+  }
+
+  TrieNode(std::string _preffix): preffix(_preffix), endWord(false), value(nullptr)
   {
     children = new TrieNode*[ALPHA_SIZE];
     for(int i=0; i < ALPHA_SIZE; i++)
@@ -49,99 +198,47 @@ struct TriePatricia::TrieNode
   };
 };
 
-TriePatricia::TriePatricia(): root(nullptr)
+template <typename TV>
+TriePatricia<TV>::TriePatricia(): root(nullptr)
 {
-  std::cout << "Trie Patricia Generado" << std::endl;
-};
-
-void TriePatricia::insert(std::string key)
-{
-  root = insert(key,root);
+  std::cout << "\nTrie Patricia Generado";
 }
 
-TriePatricia::TrieNode* TriePatricia::insert(std::string key, TrieNode* node)
+template <typename TV>
+void TriePatricia<TV>::insert(std::string key, TV value)
 {
-  if(node == nullptr)
-  {
-    node = new TrieNode(key);
-    node->endWord = true;
-    return node;
-  }
-  
-  std::string pref = "";
-  while(pref.size() < key.size() && pref.size() < node->preffix.size())
-  {
-    if (key[pref.size()] == node->preffix[pref.size()])
-      pref += key[pref.size()];
-    else
-      break;
-  }
-  
-  if (pref.size() < key.size() && pref.size() < node->preffix.size())
-  {
-    std::string suff_node = node->preffix.substr(pref.size());
-    int pos_node = suff_node[0] - 'a';
-    std::string suff_key  = key.substr(pref.size());
-    int pos_key  = suff_key[0] - 'a';
-    TrieNode* father = new TrieNode(pref);
-    father->children[pos_node] = node;
-    father->children[pos_node]->preffix = suff_node;
-    father->children[pos_key] = new TrieNode(suff_key);
-    father->children[pos_key]->endWord = true;
-    return father;
-  }
-  else if (pref.size() < key.size() && pref.size() == node->preffix.size())
-  {
-    std::string suff_key  = key.substr(pref.size());
-    int pos_key = suff_key[0] - 'a';
-    node->children[pos_key] = insert(suff_key,node->children[pos_key]);
-  }
-  else if(pref.size() == key.size() && pref.size() < node->preffix.size())
-  {
-    std::string suff_node = node->preffix.substr(pref.size());
-    int pos_node = suff_node[0] - 'a';
-    TrieNode* father = new TrieNode(pref);
-    father->endWord = true;
-    father->children[pos_node] = node;
-    father->children[pos_node]->preffix = suff_node;
-    return father;
-  }
-  else
-  {
-    node->endWord = true;
-  }
-  return node;
+  root = insert(key,value,root);
 }
 
-bool TriePatricia::search(std::string key)
+template <typename TV>
+bool TriePatricia<TV>::search(std::string key)
 {
   if (search(key,root) == nullptr)
     return false;
   return true;
 }
 
-TriePatricia::TrieNode* TriePatricia::search(std::string &key, TrieNode* &node)
+template <typename TV>
+TV TriePatricia<TV>::get_value(std::string key)
 {
-  if (node == nullptr)
-    return nullptr;
-
-  if (key.size() < node->preffix.size())
-    return nullptr;
-
-  if (key.size() == node->preffix.size())
-  {
-    if(key == node->preffix)
-      if(node->endWord)
-        return node;
-    return nullptr;
-  }
-
-  std::string suff_key = key.substr(node->preffix.size());
-  int pos_key = suff_key[0] - 'a';
-  return search(suff_key, node->children[pos_key]);
+  TrieNode* result = search(key,root);
+  if(result == nullptr)
+    throw("The key is invalid.");
+  return *(result->value);
 }
 
-std::list<std::string> TriePatricia::start_with(std::string preffix)
+template <typename TV>
+std::list<TV> TriePatricia<TV>::return_values(std::string preffix)
+{
+  std::list<TV> result;
+  std::string pref = "";
+  TrieNode* finded = start_with(preffix, root, pref);
+  add_values(&result, finded);
+  return result;
+};
+
+template <typename TV>
+std::list<std::string> TriePatricia<TV>::start_with(std::string preffix)
 {
   std::list<std::string> result;
   std::string pref = "";
@@ -150,26 +247,20 @@ std::list<std::string> TriePatricia::start_with(std::string preffix)
   return result;
 }
 
-TriePatricia::TrieNode* TriePatricia::start_with(std::string &preffix, TrieNode* &node, std::string& pref)
+template <typename TV>
+void TriePatricia<TV>::add_values(std::list<TV>* the_list, TrieNode* &node)
 {
-  if (node == nullptr)
-    return nullptr;
-
-  if (preffix.size() <= node->preffix.size())
+  if(node != nullptr)
   {
-    for(int i=0; i < preffix.size(); i++)
-    if(node->preffix[i] != preffix[i])
-      return nullptr;
-    return node;
+    if(node->endWord)
+      the_list->push_back(*(node->value));
+    for (unsigned int i=0; i < ALPHA_SIZE; i++)
+      add_values(the_list, node->children[i]);
   }
+};
 
-  pref += node->preffix;
-  std::string suff_preffix = preffix.substr(node->preffix.size());
-  int pos_preffix = suff_preffix[0] - 'a';
-  return start_with(suff_preffix, node->children[pos_preffix], pref);
-}
-
-void TriePatricia::add_results(std::list<std::string>* the_list, TrieNode* &node, std::string pref)
+template <typename TV>
+void TriePatricia<TV>::add_results(std::list<std::string>* the_list, TrieNode* &node, std::string pref)
 {
   if(node != nullptr)
   {
@@ -181,63 +272,35 @@ void TriePatricia::add_results(std::list<std::string>* the_list, TrieNode* &node
   }
 }
 
-
-void TriePatricia::remove(std::string key)
+template <typename TV>
+void TriePatricia<TV>::remove(std::string key)
 {
   root = remove(key,root);
 }
 
-TriePatricia::TrieNode* TriePatricia::remove(std::string key, TrieNode* node)
-{
-  if (key.size() <= node->preffix.size())
-  {
-    if (key == node->preffix)
-    {
-      node->endWord = false;
-      if (node->is_empty())
-      {
-        delete node;
-        node = nullptr;
-      }
-      return node;
-    }
-    return node;
-  }
-  
-  std::string suff_key = key.substr(node->preffix.size());
-  if(node->preffix + suff_key == key)
-  {
-    int pos = suff_key[0] - 'a';
-    node->children[pos] = remove(suff_key,node->children[pos]);
-    if(node->endWord == false)
-    {
-      if(node->is_empty())
-      {
-        delete node;
-        node = nullptr;
-      }
-    }
-  }
-  return node;
-}
-
-std::string TriePatricia::toString(std::string sep)
+template <typename TV>
+std::string TriePatricia<TV>::toString()
 {
   if(root == nullptr)
     return "";
-  return toString(sep,root,"");
+  return toString(root,"");
 }
 
-std::string TriePatricia::toString(std::string sep, TrieNode* temp, std::string pref)
+template <typename TV>
+std::string TriePatricia<TV>::toString(TrieNode* temp, std::string pref)
 {
   pref = pref + temp->preffix;
   std::string result = "";
   if(temp->endWord)
-    result = pref + sep;
+  {
+    std::stringstream word;
+    word << '\n' << pref << ": " << *(temp->value);
+    result = word.str();
+  }
   for (unsigned int i=0; i < ALPHA_SIZE; i++)
   {
     if(temp->children[i] != nullptr)
-      result = result + toString(sep, temp->children[i], pref);
+      result = result + toString(temp->children[i], pref);
   }
   return result;
 }
