@@ -1,22 +1,27 @@
 #ifndef CIRCULAR_H
 #define CIRCULAR_H
+
 #include <iostream>
-#include "list.h"
+#include <string>
 
 template <typename T>
-class CircularList : public List<T>
+class CircularList
 {
     private:
         struct Node;
         struct Normal;
         struct Sentinel;
+        class CircularListIterator;
+        typedef CircularListIterator iterator;
     private:
         Node* head;
         int nodes; 
     public:
         CircularList();
         ~CircularList();
-
+        
+        iterator begin();
+        iterator end();
         T front();
         T back();
         void push_front(T data);
@@ -33,16 +38,7 @@ class CircularList : public List<T>
         bool is_sorted();
         void reverse();
         std::string name();
-
-        void display()
-        {
-            Node* temp = head->next;
-            std::cout << "Circular List: ";
-            while (temp != head) {
-                std::cout << temp->get_data() << ' ';
-                temp = temp->next;
-            } std::cout << std::endl;
-        };  
+        void display();  
 };
 
 template <typename T>
@@ -72,6 +68,36 @@ struct CircularList<T>::Sentinel:Node
     T& get_data() override {throw("Nodo Sentinel");};
 };
 
+template <typename T>
+class CircularList<T>::CircularListIterator
+{
+    private:
+        Node* current;
+    public:
+        CirculatListIterator(node* n = nullptr): current(n)
+        {}; 
+        
+        bool operator == (const CircularListIterator& other)
+        {return current == other.current;};
+
+        bool operator != (const CircularListIterator& other)
+        {return current == other.current;};
+
+        CircularListIterator& operator ++ ()
+        {
+            currrent = current->next;
+            return this;
+        };
+
+        CircularListIterator& operator -- ()
+        {
+            current = current->prev;
+            return *this;
+        };
+
+        T operator * ()
+        {return current->data;};
+};
 
 template <typename T>
 CircularList<T>::CircularList():List<T>() {
@@ -83,6 +109,18 @@ template <typename T>
 CircularList<T>::~CircularList() {
     clear();
     delete head;
+}
+
+template <typename T>
+CircularList<T>::iterator CircularList<T>::begin()
+{
+    return iterator(head->next);
+}
+
+template <typename T>
+CircularList<T>::iterator CircularList<T>::end()
+{
+    return iterator(head);
 }
 
 template <typename T>
@@ -245,5 +283,16 @@ void CircularList<T>::reverse() {
 
 template <typename T>
 std::string CircularList<T>::name() {return "CircularDoubleLinkedList";}
+
+template <typename T>
+void CircularList<T>::display()
+{
+    Node* temp = head->next;
+    std::cout << "Circular List: ";
+    while (temp != head) {
+        std::cout << temp->get_data() << ' ';
+        temp = temp->next;
+    } std::cout << std::endl;
+}
 
 #endif

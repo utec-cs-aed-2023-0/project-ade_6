@@ -70,7 +70,7 @@ void project::execute()
     switch(selector)
     {
       case 1:
-          insertitionblock();
+        insertitionblock();
         break;
       case 2:
         printdata();
@@ -85,7 +85,7 @@ void project::execute()
         repairblockchain();
         break;
       case 6:
-          exportation();
+        exportation();
         break;
       case 7:
         std::cout << '\n' << "FIN DEL PROYECTO" << '\n' << "Adios" << '\n';
