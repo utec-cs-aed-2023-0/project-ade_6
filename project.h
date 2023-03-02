@@ -8,9 +8,8 @@
 #include <cctype>
 
 #include "Librerias/AVL/avl.h"
-#include "Librerias/Tries/trieBeta.h"
-
-#include "Librerias/Btree/btree.h"
+#include "Librerias/trie_patricia.h"
+#include "Librerias/btree.h"
 
 #include "Block.h"
 #include "block_chain.h"
@@ -19,20 +18,17 @@
 class project
 {
   private:
-    Blockchain bloching;
-    Btree btree;
-    AVLTree avlTree;
-
+    Blockchain the_block_chain;
+    TriePatricia<transaction*> trie_patricia;
+    BTree<int>* btree;
     int selector;
-    /*
-     * Implementar aqui el  AVL ,BTREE, TRUI¡¡
-     * */
 
   public:
+    project();
     void execute();
 
   private:
-    void insertitionblock();
+    void insert_block();
     void printdata();
     void search();
     void proofofwork();
@@ -47,6 +43,11 @@ class project
     void Contain();
 
 };
+
+project::project()
+{
+    btree = new BTree<int>(3);
+}
 
 void project::execute()
 {
@@ -70,7 +71,7 @@ void project::execute()
     switch(selector)
     {
       case 1:
-        insertitionblock();
+        insert_block();
         break;
       case 2:
         printdata();
@@ -97,10 +98,8 @@ void project::execute()
   } while(selector != 7);
 }
 
-void project::insertitionblock()
+void project::insert_block()
 {
-   BTree<int>* btree = new BTree<int>(3);
-   trie T;
 
     int cantidad;
     time_t dataTime;
@@ -112,28 +111,23 @@ void project::insertitionblock()
     std::cin >> receptor;
     std::cout << " - Ingrese cantidad de BitCoins a enviar: ";
     std::cin >> cantidad;
-    btree->insert(cantidad);
     std::cout << '\n';
 
-    for (int i = 0; i < emisor.length(); i++) emisor[i] = tolower(emisor[i]);
-    for (int i = 0; i < receptor.length(); i++) receptor[i] = tolower(receptor[i]);
-
-    T.insert(emisor);
-    T.insert(receptor);
-
-
-
-    printf("%d\n", T.exact_match("hosmer"));
-    T.words_with_prefix("h");
+    for (int i = 0; i < emisor.length(); i++)
+        emisor[i] = tolower(emisor[i]);
+    for (int i = 0; i < receptor.length(); i++)
+        receptor[i] = tolower(receptor[i]);
 
     transaction *data = new transaction(cantidad, emisor, receptor, time(&dataTime));
-    bloching.add(data);
+    trie_patricia.insert(data->senderkey, data);
+    btree->insert(cantidad);
+    the_block_chain.add(data);
     std::cout << '\n' << "El bloque ha sido creado e insertado" << '\n';
 }
 
 void project::printdata()
 {
-    bloching.print();
+    the_block_chain.print();
 }
 
 void project::search()
@@ -183,55 +177,76 @@ void project::search()
 
 }
 /*----------------------------------------------------------------*/
-void project::MaxValue() {
-    auto btree =  BTree<int>(3);
-    cout<<"Maximo monto: "<<btree.maxKey()<<endl;
+void project::MaxValue()
+{
+    cout << "Maximo monto: "<<btree->maxKey()<<endl;
+}
 
+void project::MinValue()
+{
+    cout<<"Minimo monto: "<< btree->minKey() << endl;
 }
-void project::MinValue() {
-    auto btree =  BTree<int>(3);
-    cout<<"Minimo monto: "<<btree.minKey()<<endl;
-}
-void project::Range() {
-    auto btree = new BTree<int>(3);
+
+void project::Range()
+{
     int num;
     cout<<"Ponga el numero: " <<endl;
     cin>>num;
-    cout << btree->PrintrangeSearch(num);
+    btree->print_range_search(num,the_block_chain.size());
 }
-void project::Search() {
-    trie T;
+
+void project::Search()
+{
     string name;
-    cout << "Pongan nomrbe del la persona:"<<endl;
+    cout << "Pongan el nombre del emisor:" << endl;
     cin>>name;
-    auto result =T.exact_match(name);
-    printf("%d\n", result);
-    if (result==0){
-        cout << "No se encuentro el nombre"<<endl;
+    try
+    {
+        transaction* data = trie_patricia.get_value(name);
+        data->print_data();
     }
-    else cout <<"Se a encontrado el usuario"<<endl;
+    catch (const char* message)
+    {
+        std::cerr << message << std::endl;
+    }
 }
-void project::Start() {
-    trie T;
+
+void project::Start()
+{
     string letter;
     cout << "Pongan Letra :"<<endl;
     cin>>letter;
-    T.words_with_prefix(letter);
+    CircularList<transaction*> resultados = trie_patricia.return_values(letter);
+    for(auto iter = resultados.begin(); iter != resultados.end(); ++iter)
+        (*iter)->print_data();
 }
-void project::Contain() {}
+
+void project::Contain()
+{
+    int index = 0;
+    do
+    {
+        cout << "\nInserte un numero: ";
+        cin >> index;
+    } while(index < 1 || index > the_block_chain.size());
+    Block* result = the_block_chain.get_block(index-1);
+    result->show_block_info(cout);
+}
+
 /*----------------------------------------------------------------*/
+
 void project::proofofwork()
 {
   int block;
   std::cout << '\n' << "Elija un bloque: ";
   std::cin >> block;
-    bloching.proofwork(block);
+  the_block_chain.proof_of_work(block);
 }
 
 void project::repairblockchain()
 {
   std::cout << '\n' << "Reparando Blockchain..." << '\n' << '\n';
-    bloching.fix_all();
+  the_block_chain.fix_all();
   std::cout << '\n' << "Blockchain Reparada" << '\n';
 }
 
@@ -241,7 +256,7 @@ void project::exportation()
   std::cout << '\n' << "Ingrese nombre del archivo: ";
   std::cin >> file;
   file = file + ".txt";
-    bloching.import(file);
+  the_block_chain.import(file);
 }
 
 #endif

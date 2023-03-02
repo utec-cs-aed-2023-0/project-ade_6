@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 #include <sstream>
+#include "circular.h"
 
 const unsigned ALPHA_SIZE = 26;
 
@@ -20,8 +21,8 @@ class TriePatricia
     void insert(std::string key, TV value);
     bool search(std::string key);
     TV get_value(std::string key);
-    std::list<TV> return_values(std::string preffix);
-    std::list<std::string> start_with(std::string preffix);
+    CircularList<TV> return_values(std::string preffix);
+    CircularList<std::string> start_with(std::string preffix);
     void remove(std::string key);
     std::string toString();
   private:
@@ -161,9 +162,46 @@ class TriePatricia
       return node;
     }
     
-    void add_values(std::list<TV>* the_list, TrieNode* &node);
-    void add_results(std::list<std::string>* the_list, TrieNode* &node, std::string pref);
-    std::string toString(TrieNode* temp, std::string pref);
+    void add_values(CircularList<TV>* the_list, TrieNode* &node)
+    {
+        if(node != nullptr)
+        {
+            if(node->endWord)
+                the_list->push_back(*(node->value));
+            for (unsigned int i=0; i < ALPHA_SIZE; i++)
+                add_values(the_list, node->children[i]);
+        }
+    };
+
+    void add_results(CircularList<std::string>* the_list, TrieNode* &node, std::string pref)
+    {
+        if(node != nullptr)
+        {
+            pref = pref + node->preffix;
+            if(node->endWord)
+                the_list->push_back(pref);
+            for (unsigned int i=0; i < ALPHA_SIZE; i++)
+                add_results(the_list, node->children[i], pref);
+        }
+    };
+
+    std::string toString(TrieNode* temp, std::string pref)
+    {
+        pref = pref + temp->preffix;
+        std::string result = "";
+        if(temp->endWord)
+        {
+            std::stringstream word;
+            word << '\n' << pref << ": " << *(temp->value);
+            result = word.str();
+        }
+        for (unsigned int i=0; i < ALPHA_SIZE; i++)
+        {
+            if(temp->children[i] != nullptr)
+                result = result + toString(temp->children[i], pref);
+        }
+        return result;
+    };
 };
 
 template <typename TV>
@@ -228,9 +266,9 @@ TV TriePatricia<TV>::get_value(std::string key)
 }
 
 template <typename TV>
-std::list<TV> TriePatricia<TV>::return_values(std::string preffix)
+CircularList<TV> TriePatricia<TV>::return_values(std::string preffix)
 {
-  std::list<TV> result;
+  CircularList<TV> result;
   std::string pref = "";
   TrieNode* finded = start_with(preffix, root, pref);
   add_values(&result, finded);
@@ -238,38 +276,13 @@ std::list<TV> TriePatricia<TV>::return_values(std::string preffix)
 };
 
 template <typename TV>
-std::list<std::string> TriePatricia<TV>::start_with(std::string preffix)
+CircularList<std::string> TriePatricia<TV>::start_with(std::string preffix)
 {
-  std::list<std::string> result;
+  CircularList<std::string> result;
   std::string pref = "";
   TrieNode* finded = start_with(preffix, root, pref);
   add_results(&result, finded, pref);
   return result;
-}
-
-template <typename TV>
-void TriePatricia<TV>::add_values(std::list<TV>* the_list, TrieNode* &node)
-{
-  if(node != nullptr)
-  {
-    if(node->endWord)
-      the_list->push_back(*(node->value));
-    for (unsigned int i=0; i < ALPHA_SIZE; i++)
-      add_values(the_list, node->children[i]);
-  }
-};
-
-template <typename TV>
-void TriePatricia<TV>::add_results(std::list<std::string>* the_list, TrieNode* &node, std::string pref)
-{
-  if(node != nullptr)
-  {
-    pref = pref + node->preffix;
-    if(node->endWord)
-      the_list->push_back(pref);
-    for (unsigned int i=0; i < ALPHA_SIZE; i++)
-      add_results(the_list, node->children[i], pref);
-  }
 }
 
 template <typename TV>
@@ -285,24 +298,4 @@ std::string TriePatricia<TV>::toString()
     return "";
   return toString(root,"");
 }
-
-template <typename TV>
-std::string TriePatricia<TV>::toString(TrieNode* temp, std::string pref)
-{
-  pref = pref + temp->preffix;
-  std::string result = "";
-  if(temp->endWord)
-  {
-    std::stringstream word;
-    word << '\n' << pref << ": " << *(temp->value);
-    result = word.str();
-  }
-  for (unsigned int i=0; i < ALPHA_SIZE; i++)
-  {
-    if(temp->children[i] != nullptr)
-      result = result + toString(temp->children[i], pref);
-  }
-  return result;
-}
-
 #endif

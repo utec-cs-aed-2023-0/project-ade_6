@@ -4,43 +4,57 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <list>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
 
+#include "Librerias/circular.h"
 #include "Block.h"
-#include "Librerias/Listas/list.h"
+#include "transaction.h"
 
 using namespace std;
 
 class Blockchain
 {
   private:
-    list<Block> chain;
-
+    CircularList<Block*> chain;
   public:
-    // Constructor
     Blockchain() {};
-
     // Public Functions
+    int size();
+    Block* get_block(int index);
     void add(transaction *data);
     void print();
     void import(string name);
-    void proofwork(int id);
+    void proof_of_work(int id);
     void fix_all();
 };
 
+int Blockchain::size()
+{
+    return chain.size();
+}
+
+Block* Blockchain::get_block(int index)
+{
+    return chain[index];
+}
+
 void Blockchain::add(transaction *data)
 {
-  Block* temp = new Block(data);
-  string prev_hash = "";
-  if (!chain.is_empty()) 
-    prev_hash = chain.back()->get_hash();
-  temp->set_id(chain.size()+1, prev_hash);
-  temp->mine();
-  chain.push(*temp);
+  if (data != nullptr)
+  {
+      auto* temp = new Block(data,1);
+      string prev_hash = std::string(64,'0');
+      if (!chain.is_empty())
+          prev_hash = chain.back()->get_hash();
+      temp->set_id(chain.size()+1, prev_hash);
+      temp->mine();
+      chain.push_back(temp);
+  }
 }
 
 void Blockchain::print()
@@ -57,24 +71,26 @@ void Blockchain::import(string name)
     file.close();
 }
 
-void Blockchain::proofwork(int id)
+void Blockchain::proof_of_work(int id)
 {
   int cont = 1;
-  list<Block>::iterator it;
   string hash_tmp;
   bool val1 = false;
   bool val2 = false;
-  for (it = chain.begin(); it != chain.end(); ++it)
+  for (auto it = chain.begin(); it != chain.end(); ++it)
   {
       Block *currentBlock = *it;
-      if (val2 == true) {
+      if (val2)
+      {
           currentBlock->set_hash_prev(hash_tmp);
           currentBlock->mine();
       }
-      if (val1 == true) {
+      if (val1)
+      {
           currentBlock->set_hash_prev(hash_tmp);
       }
-      if (cont == id) {
+      if (cont == id)
+      {
           string new_name;
           cout << endl << "Ingrese nombre para el nuevo receptor: ";
           cin >> new_name;
@@ -82,7 +98,7 @@ void Blockchain::proofwork(int id)
           cout << endl << "Desea arreglar el blockChain? (0 o 1): ";
           bool fix;
           cin >> fix;
-          if (fix == false)
+          if (!fix)
               val1 = true;
           else
           {
@@ -97,15 +113,15 @@ void Blockchain::proofwork(int id)
 
 void Blockchain::fix_all()
 {
-  string hash_tmp;
+  string hash_tmp = chain.front()->get_hash_prev();
   for (auto it = chain.begin(); it != chain.end(); ++it)
   {
-      Block *currentBlock = *it;
-      if (currentBlock->get_validation() == false) {
-          currentBlock->set_hash_prev(hash_tmp);
-          currentBlock->mine();
+      if (!(*it)->get_validation())
+      {
+          (*it)->set_hash_prev(hash_tmp);
+          (*it)->mine();
       }
-      hash_tmp = currentBlock->get_hash();
+      hash_tmp = (*it)->get_hash();
   }
 }
 

@@ -3,8 +3,6 @@
 #include <iostream>
 #include <string>
 
-#include "Librerias/Lista/list.h"
-
 #include "SHA256.h"
 #include "transaction.h"
 using namespace std;
@@ -13,9 +11,8 @@ class Block {
    private:
     unsigned int id = 1;
     unsigned long int nonce;
-    transaction *data;
-    list <transaction*>
-    SHA256 *hash;
+    transaction* data;
+    SHA256* hash;
     string prev;
     bool is_valid;
 

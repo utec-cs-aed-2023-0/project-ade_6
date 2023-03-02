@@ -19,9 +19,8 @@ class CircularList
     public:
         CircularList();
         ~CircularList();
-        
-        iterator begin();
-        iterator end();
+        iterator begin() {return iterator(head->next);};
+        iterator end() {return iterator(head);};
         T front();
         T back();
         void push_front(T data);
@@ -74,19 +73,23 @@ class CircularList<T>::CircularListIterator
     private:
         Node* current;
     public:
-        CirculatListIterator(node* n = nullptr): current(n)
+        CircularListIterator(Node* n = nullptr): current(n)
         {}; 
         
         bool operator == (const CircularListIterator& other)
-        {return current == other.current;};
+        {
+            return current == other.current;
+        };
 
         bool operator != (const CircularListIterator& other)
-        {return current == other.current;};
+        {
+            return current != other.current;
+        };
 
         CircularListIterator& operator ++ ()
         {
-            currrent = current->next;
-            return this;
+            current = current->next;
+            return *this;
         };
 
         CircularListIterator& operator -- ()
@@ -96,31 +99,22 @@ class CircularList<T>::CircularListIterator
         };
 
         T operator * ()
-        {return current->data;};
+        {
+            return current->get_data();
+        };
 };
 
 template <typename T>
-CircularList<T>::CircularList():List<T>() {
+CircularList<T>::CircularList() {
     head = new Sentinel;
     nodes = 0;
 }
 
 template <typename T>
-CircularList<T>::~CircularList() {
+CircularList<T>::~CircularList()
+{
     clear();
     delete head;
-}
-
-template <typename T>
-CircularList<T>::iterator CircularList<T>::begin()
-{
-    return iterator(head->next);
-}
-
-template <typename T>
-CircularList<T>::iterator CircularList<T>::end()
-{
-    return iterator(head);
 }
 
 template <typename T>

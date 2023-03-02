@@ -7,6 +7,7 @@
 #include <cmath>
 
 using namespace std;
+
 template <typename TK>
 class BTree
 {
@@ -31,12 +32,13 @@ public:
             delete[] children;
             }
         };
+
         BTree(int t);
 		~BTree();
 
 		bool search(TK key);
 		void rangeSearch(TK start, TK end);
-        void PrintrangeSearch(TK key);
+        void print_range_search(TK key, TK end);
 	    void insert(TK key);
 		void remove(TK key);
 		string toString(string sep);
@@ -58,13 +60,13 @@ public:
 		// Common helper functions
         bool search(Node<TK>* node, TK key);
 		void rangeSearch(Node<TK>* node, TK start, TK end);
-        void PrintrangeSearch(TK key, Node<TK>* node,  TK end);
+        void print_range_search(TK key, Node<TK>* node,  TK end);
         void toString(Node<TK>* node, string sep, stringstream& out);
 		void displayGivenLevel(Node<TK>* node, int level);
 
 		// Helper functions for insert method
         void insertNonFull(Node<TK>*& node, TK key);
-        void splitChild(Node<TK>* parent, int index);
+        void splitChild(Node<TK>* x, int index);
 
 		// Helper functions for remove method
 		void removeFromNode(Node<TK>* node, TK key);
@@ -169,14 +171,15 @@ void BTree<TK>::rangeSearch(Node<TK>* node, TK start, TK end){
 	if (!node->leaf)
         rangeSearch(node->children[i], start, end);
 }
+
 template <typename TK>
-void BTree<TK>::PrintrangeSearch(TK key){
-    PrintrangeSearch(key,root,  end);
+void BTree<TK>::print_range_search(TK key, TK end)
+{
+    print_range_search(key,root,end);
 }
 
 template <typename TK>
-void BTree<TK>::PrintrangeSearch(TK key ,Node<TK>* node, TK end){
-
+void BTree<TK>::print_range_search(TK key ,Node<TK>* node, TK end){
     if (node == nullptr)
         return;
 
@@ -187,14 +190,14 @@ void BTree<TK>::PrintrangeSearch(TK key ,Node<TK>* node, TK end){
     while (i < node->count and node->keys[i] <= end)
     {
         if (!node->leaf)
-            PrintrangeSearch (node->children[i], key, end);
+            print_range_search(key, node->children[i], end);
         cout << node->keys[i] << " ";
         ++i;
     }
 
     if (!node->leaf)
         if(i == node->count)
-            PrintrangeSearch(node->children[i], key,end);
+            print_range_search(key,node->children[i],end);
 }
 
 template <typename TK>
