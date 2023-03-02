@@ -11,13 +11,17 @@ Blockchain nos sirve para conocer las ventajas de las nuevas tecnologías, se un
 ## Algoritmo implementado
 ### SHA_256
 Las siglas SHA-256 hacen mención a la función hash que ha sido elegida para el funcionamiento de muchas criptomonedas, pues ofrece un alto nivel de seguridad, lo que la hace perfecta para la tarea de proteger y codificar de forma segura la información de las mismas.
+## 
+
 ## Objetivos:
 - Implementar los metodos de busqueda implementado en clase
 - Aplicar blockin para las transacciones de bitcoins
 ## Metodos de Busqueda Implementados:
-- [x] Max_Value
-- [x] Min_Value
-- [x] Range_Search
-- [x] Contains
-- [x] Search
-- [x] Start
+- Max_Value (AVL)
+- Min_Value (AVL)
+- Range_Search (Btree)
+- Contains (Heap)
+- Search (Trie)
+- Start (Trie Patricia)
+
+
